@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Cookbook</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #0d1117;
+  --bg-card: #161b22;
+  --bg-card-hover: #1c2333;
+  --bg-surface: #1e2636;
+  --bg-terminal: #0a0e14;
+  --border: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --accent-orange: #d4a574;
+  --accent-orange-dim: #d4a57440;
+  --accent-green: #7ee787;
+  --accent-green-dim: #7ee78730;
+  --accent-blue: #79c0ff;
+  --accent-blue-dim: #79c0ff30;
+  --accent-purple: #d2a8ff;
+  --accent-purple-dim: #d2a8ff30;
+  --accent-red: #ff7b72;
+  --accent-red-dim: #ff7b7230;
+  --accent-yellow: #ffd866;
+  --accent-cyan: #56d4dd;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--accent-orange-dim); color: var(--accent-orange); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ===== LANG SYSTEM ===== */
+[data-tr] { display: inline; }
+[data-en] { display: none; }
+html[lang="en"] [data-tr] { display: none !important; }
+html[lang="en"] [data-en] { display: inline !important; }
+
+/* Block-level overrides */
+div[data-tr], p[data-tr], h2[data-tr], h3[data-tr], li[data-tr] { display: block; }
+div[data-en], p[data-en], h2[data-en], h3[data-en], li[data-en] { display: none; }
+html[lang="en"] div[data-tr], html[lang="en"] p[data-tr], html[lang="en"] h2[data-tr], html[lang="en"] h3[data-tr], html[lang="en"] li[data-tr] { display: none !important; }
+html[lang="en"] div[data-en], html[lang="en"] p[data-en], html[lang="en"] h2[data-en], html[lang="en"] h3[data-en], html[lang="en"] li[data-en] { display: block !important; }
+
+/* Table rows */
+tr[data-tr] { display: table-row; }
+tr[data-en] { display: none; }
+html[lang="en"] tr[data-tr] { display: none !important; }
+html[lang="en"] tr[data-en] { display: table-row !important; }
+
+/* List items */
+li[data-tr] { display: list-item; }
+li[data-en] { display: none; }
+html[lang="en"] li[data-tr] { display: none !important; }
+html[lang="en"] li[data-en] { display: list-item !important; }
+
+/* ===== LANG SWITCHER ===== */
+.lang-switcher {
+  position: fixed; top: 16px; right: 16px; z-index: 999;
+  display: flex; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.lang-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 9px 18px; border: none;
+  background: transparent; color: var(--text-muted);
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.lang-btn:hover { color: var(--text-primary); background: var(--bg-surface); }
+.lang-btn.active { background: var(--accent-orange-dim); color: var(--accent-orange); }
+
+/* ===== HERO ===== */
+.hero {
+  position: relative; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem; overflow: hidden;
+}
+
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-orange-dim) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 20% 80%, var(--accent-blue-dim) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 80% 60%, var(--accent-purple-dim) 0%, transparent 50%);
+  animation: heroGlow 8s ease-in-out infinite alternate;
+}
+
+@keyframes heroGlow { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px; opacity: 0.15;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent);
+}
+
+.hero-content { position: relative; z-index: 1; text-align: center; max-width: 800px; }
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border: 1px solid var(--accent-orange-dim);
+  border-radius: 999px; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem; color: var(--accent-orange);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 2rem; background: var(--accent-orange-dim);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.hero-badge .dot { width: 6px; height: 6px; background: var(--accent-green); border-radius: 50%; animation: blink 2s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.hero h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800;
+  line-height: 1.1; margin-bottom: 1.5rem;
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+
+.hero h1 .grad {
+  background: linear-gradient(135deg, var(--accent-orange), var(--accent-yellow), var(--accent-orange));
+  background-size: 200% 200%; -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; animation: shimmer 4s ease-in-out infinite;
+}
+
+@keyframes shimmer { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+.hero p { font-size: 1.15rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 2.5rem; animation: fadeInUp 0.6s ease-out 0.2s both; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.hero-terminal {
+  background: var(--bg-terminal); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; text-align: left;
+  max-width: 540px; margin: 0 auto;
+  animation: fadeInUp 0.6s ease-out 0.3s both;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.tbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
+.td { width: 12px; height: 12px; border-radius: 50%; }
+.td.r { background: #ff5f57; } .td.y { background: #febc2e; } .td.g { background: #28c840; }
+.tbar span:last-child { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); margin-left: auto; }
+
+.tbody { padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 1.8; }
+.tbody .p { color: var(--accent-orange); }
+.tbody .c { color: var(--text-primary); }
+.tbody .o { color: var(--accent-green); }
+.tbody .m { color: var(--text-muted); }
+
+.cur { display: inline-block; width: 8px; height: 16px; background: var(--accent-orange); animation: cb 1s step-end infinite; vertical-align: text-bottom; margin-left: 2px; }
+@keyframes cb { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* ===== NAV ===== */
+.toc { position: sticky; top: 0; z-index: 100; background: rgba(13,17,23,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 1rem; overflow-x: auto; }
+.toc-inner { display: flex; max-width: 1200px; margin: 0 auto; white-space: nowrap; }
+.toc a { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); text-decoration: none; padding: 14px 16px; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.toc a:hover { color: var(--text-primary); border-bottom-color: var(--accent-orange); }
+
+/* ===== SECTIONS ===== */
+.container { max-width: 920px; margin: 0 auto; padding: 0 1.5rem; }
+section { padding: 5rem 0; }
+.sl { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent-orange); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.75rem; }
+.st { font-family: 'JetBrains Mono', monospace; font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 700; margin-bottom: 1rem; line-height: 1.2; }
+.sd { color: var(--text-secondary); font-size: 1rem; max-width: 680px; margin-bottom: 2.5rem; }
+
+/* ===== CODE BLOCKS ===== */
+.cb { background: var(--bg-terminal); border: 1px solid var(--border); border-radius: 10px; margin: 1.5rem 0; overflow: hidden; }
+.cbh { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg-card); border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+.cb pre { padding: 16px 20px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.75; color: var(--text-primary); }
+.cb .kw { color: var(--accent-purple); } .cb .fn { color: var(--accent-blue); } .cb .str { color: var(--accent-green); } .cb .cmt { color: var(--text-muted); font-style: italic; } .cb .fl { color: var(--accent-yellow); } .cb .pa { color: var(--accent-cyan); } .cb .pr { color: var(--accent-orange); } .cb .ou { color: var(--accent-green); }
+
+/* ===== CARDS ===== */
+.cg { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.cd { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; transition: all 0.25s; }
+.cd:hover { border-color: var(--accent-orange-dim); background: var(--bg-card-hover); transform: translateY(-2px); }
+.cd .ci { font-size: 1.5rem; margin-bottom: 0.75rem; }
+.cd h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+.cd p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+.cd code { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; background: var(--bg-surface); color: var(--accent-orange); padding: 2px 6px; border-radius: 4px; }
+
+/* ===== TABLES ===== */
+.ct { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.88rem; }
+.ct th { text-align: left; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent-orange); letter-spacing: 0.05em; text-transform: uppercase; }
+.ct td { padding: 12px 16px; border: 1px solid var(--border); vertical-align: top; }
+.ct tr:hover td { background: var(--bg-card); }
+.ct code { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-green); background: var(--bg-terminal); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.ct .d { color: var(--text-secondary); }
+
+/* ===== TAGS ===== */
+.tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; font-weight: 500; }
+.tag.ctx { background: var(--accent-blue-dim); color: var(--accent-blue); }
+.tag.ses { background: var(--accent-purple-dim); color: var(--accent-purple); }
+.tag.cfg { background: var(--accent-green-dim); color: var(--accent-green); }
+.tag.inf { background: var(--accent-orange-dim); color: var(--accent-orange); }
+.tag.prj { background: var(--accent-red-dim); color: var(--accent-red); }
+
+/* ===== CALLOUT ===== */
+.co { border-left: 3px solid var(--accent-orange); background: var(--bg-card); padding: 1.25rem 1.5rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+.co.tip { border-left-color: var(--accent-green); }
+.co.warn { border-left-color: var(--accent-yellow); }
+.co-t { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; }
+.co p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+
+/* ===== FLOW ===== */
+.fl { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.fs { background: var(--bg-card); border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; color: var(--accent-blue); }
+.fa { color: var(--text-muted); font-size: 1.2rem; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+
+/* ===== FILE TREE ===== */
+.ft { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; line-height: 2; background: var(--bg-terminal); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin: 1.5rem 0; }
+.ft .di { color: var(--accent-blue); } .ft .fi { color: var(--text-secondary); } .ft .im { color: var(--accent-orange); font-weight: 600; } .ft .cm { color: var(--text-muted); }
+
+/* ===== MISC ===== */
+p code, li code { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; background: var(--bg-surface); color: var(--accent-orange); padding: 2px 6px; border-radius: 4px; }
+h2, h3 { font-family: 'JetBrains Mono', monospace; }
+ul, ol { padding-left: 1.5rem; margin: 1rem 0; }
+li { margin-bottom: 0.5rem; color: var(--text-secondary); }
+li strong { color: var(--text-primary); }
+a { color: var(--accent-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+footer { text-align: center; padding: 4rem 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+footer .lt { font-size: 1.1rem; font-weight: 700; color: var(--accent-orange); margin-bottom: 0.5rem; }
+
+@media (max-width: 640px) {
+  .cg { grid-template-columns: 1fr; }
+  .ct td, .ct th { padding: 8px 10px; }
+  .fl { flex-direction: column; align-items: flex-start; }
+  .fa { transform: rotate(90deg); }
+  section { padding: 3rem 0; }
+  .lang-switcher { top: 10px; right: 10px; }
+  .lang-btn { padding: 7px 12px; font-size: 0.72rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- LANG SWITCHER -->
+<div class="lang-switcher">
+  <button class="lang-btn active" onclick="setLang('tr')" id="btn-tr">TR</button>
+  <button class="lang-btn" onclick="setLang('en')" id="btn-en">EN</button>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="dot"></span> <span data-tr>Claude Code Cookbook</span><span data-en>Claude Code Cookbook</span></div>
+    <h1><span class="grad">Claude Code</span><br><span data-tr>Komple Rehber</span><span data-en>Complete Guide</span></h1>
+    <p data-tr>Slash komutlarından CLAUDE.md dosyalarına, skill'lerden hook'lara — Claude Code'u ustaca kullanmak için bilmen gereken her şey.</p>
+    <p data-en>From slash commands to CLAUDE.md files, skills to hooks — everything you need to master Claude Code on a single page.</p>
+    <div class="hero-terminal">
+      <div class="tbar"><span class="td r"></span><span class="td y"></span><span class="td g"></span><span>~/project — claude</span></div>
+      <div class="tbody">
+        <span class="p">❯</span> <span class="c">npm install -g @anthropic-ai/claude-code</span><br>
+        <span class="p">❯</span> <span class="c">claude</span><br>
+        <span class="o">╭──────────────────────────────────╮</span><br>
+        <span class="o">│  Claude Code v2.1  •  Opus 4.6  │</span><br>
+        <span class="o">╰──────────────────────────────────╯</span><br>
+        <span class="p">❯</span> <span class="c">/init</span><br>
+        <span class="m" data-tr># CLAUDE.md oluşturuluyor...</span><span class="m" data-en># Creating CLAUDE.md...</span><br>
+        <span class="o" data-tr>✓ Proje analiz edildi, CLAUDE.md hazır!</span><span class="o" data-en>✓ Project analyzed, CLAUDE.md is ready!</span><br>
+        <span class="p">❯</span> <span class="cur"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="toc"><div class="toc-inner">
+  <a href="#setup"><span data-tr>Kurulum</span><span data-en>Setup</span></a>
+  <a href="#basics"><span data-tr>Temeller</span><span data-en>Basics</span></a>
+  <a href="#slash"><span data-tr>Komutlar</span><span data-en>Commands</span></a>
+  <a href="#context">Context</a>
+  <a href="#claudemd">CLAUDE.md</a>
+  <a href="#skills">Skills</a>
+  <a href="#hooks">Hooks</a>
+  <a href="#agents">Agents</a>
+  <a href="#plugins">Plugins</a>
+  <a href="#workflow">Workflow</a>
+  <a href="#tips">Tips</a>
+</div></nav>
+
+<!-- ====== 01 SETUP ====== -->
+<section id="setup"><div class="container">
+  <div class="sl"><span data-tr>01 — Başlangıç</span><span data-en>01 — Getting Started</span></div>
+  <h2 class="st" data-tr>Kurulum</h2><h2 class="st" data-en>Installation</h2>
+  <p class="sd" data-tr>Claude Code terminalinde çalışan agentic bir kodlama aracıdır. Kurulumu birkaç dakika sürer.</p>
+  <p class="sd" data-en>Claude Code is an agentic coding tool that runs in your terminal. Setup takes just a few minutes.</p>
+
+  <h3 style="margin-bottom:1rem" data-tr>Gereksinimler</h3><h3 style="margin-bottom:1rem" data-en>Requirements</h3>
+  <ul>
+    <li data-tr><strong>Node.js 18+</strong> — <code>node -v</code> ile kontrol et</li>
+    <li data-en><strong>Node.js 18+</strong> — check with <code>node -v</code></li>
+    <li data-tr><strong>Anthropic hesabı</strong> — Pro, Max veya API key</li>
+    <li data-en><strong>Anthropic account</strong> — Pro, Max, or API key</li>
+    <li data-tr><strong>macOS, Linux veya Windows</strong> (WSL önerilir)</li>
+    <li data-en><strong>macOS, Linux, or Windows</strong> (WSL recommended)</li>
+  </ul>
+
+  <div class="cb"><div class="cbh">Terminal</div>
+    <pre><span class="cmt" data-tr># Global kurulum</span><span class="cmt" data-en># Global install</span>
+<span class="pr">❯</span> npm install -g <span class="str">@anthropic-ai/claude-code</span>
+
+<span class="cmt" data-tr># API anahtarı (opsiyonel)</span><span class="cmt" data-en># API key (optional)</span>
+<span class="pr">❯</span> export <span class="fl">ANTHROPIC_API_KEY</span>=<span class="str">"sk-ant-..."</span>
+
+<span class="cmt" data-tr># Proje dizinine git ve başlat</span><span class="cmt" data-en># Go to project dir and launch</span>
+<span class="pr">❯</span> cd <span class="pa">~/projects/my-app</span>
+<span class="pr">❯</span> claude</pre></div>
+
+  <div class="co tip"><div class="co-t">💡 <span data-tr>İpucu</span><span data-en>Tip</span></div>
+    <p data-tr>Claude Code'u VS Code veya JetBrains IDE'lerinden de kullanabilirsin. Ama terminal deneyimi en güçlüsü.</p>
+    <p data-en>You can also use Claude Code from VS Code or JetBrains IDEs via extensions, but the terminal experience is most powerful.</p>
+  </div>
+</div></section><hr class="divider">
+
+<!-- ====== 02 BASICS ====== -->
+<section id="basics"><div class="container">
+  <div class="sl"><span data-tr>02 — Temeller</span><span data-en>02 — Basics</span></div>
+  <h2 class="st" data-tr>İlk Adımlar</h2><h2 class="st" data-en>First Steps</h2>
+  <p class="sd" data-tr>Claude Code'u çalıştırdığında ne olur? Agentic loop, context ve araçları anla.</p>
+  <p class="sd" data-en>What happens when you run Claude Code? Understand the agentic loop, context, and tools.</p>
+
+  <div class="cg">
+    <div class="cd"><div class="ci">📁</div><h3 data-tr>Proje Dosyaları</h3><h3 data-en>Project Files</h3><p data-tr>Dizinindeki tüm dosyalar. İzin verirsen başka dizinler de.</p><p data-en>All files in your directory. Other dirs too with permission.</p></div>
+    <div class="cd"><div class="ci">⚡</div><h3>Terminal</h3><p data-tr>Build, git, paket yöneticileri — senin çalıştırabildiğin her şey.</p><p data-en>Build tools, git, package managers — anything you can run from CLI.</p></div>
+    <div class="cd"><div class="ci">🔀</div><h3 data-tr>Git Durumu</h3><h3 data-en>Git State</h3><p data-tr>Mevcut branch, commit edilmemiş değişiklikler, commit geçmişi.</p><p data-en>Current branch, uncommitted changes, recent commit history.</p></div>
+    <div class="cd"><div class="ci">🧠</div><h3>CLAUDE.md</h3><p data-tr>Her oturumda otomatik okunan proje talimatları.</p><p data-en>Project instructions automatically loaded every session.</p></div>
+  </div>
+
+  <h3 style="margin:2rem 0 1rem" data-tr>Agentic Döngü</h3><h3 style="margin:2rem 0 1rem" data-en>Agentic Loop</h3>
+  <div class="fl">
+    <span class="fs"><span data-tr>🔍 Bağlam Topla</span><span data-en>🔍 Gather Context</span></span><span class="fa">→</span>
+    <span class="fs"><span data-tr>🛠️ Aksiyon Al</span><span data-en>🛠️ Take Action</span></span><span class="fa">→</span>
+    <span class="fs"><span data-tr>✅ Doğrula</span><span data-en>✅ Verify</span></span>
+  </div>
+
+  <div class="co"><div class="co-t"><span data-tr>🔑 Temel Kısayollar</span><span data-en>🔑 Key Shortcuts</span></div>
+    <p><code>Esc</code> → <span data-tr>Durdur</span><span data-en>Stop</span> · <code>!</code> → <span data-tr>Shell komutu</span><span data-en>Shell cmd</span> · <code>#</code> → <span data-tr>Hafızaya yaz</span><span data-en>Save to memory</span> · <code>@</code> → <span data-tr>Dosya referansı</span><span data-en>File ref</span></p>
+  </div>
+</div></section><hr class="divider">
+
+<!-- ====== 03 SLASH COMMANDS ====== -->
+<section id="slash"><div class="container">
+  <div class="sl"><span data-tr>03 — Komutlar</span><span data-en>03 — Commands</span></div>
+  <h2 class="st" data-tr>Slash Komutları — Tam Liste</h2><h2 class="st" data-en>Slash Commands — Full Reference</h2>
+  <p class="sd" data-tr><code>/</code> yaz ve Tab'a bas. Harf yazmaya başla, filtrele.</p>
+  <p class="sd" data-en>Type <code>/</code> and press Tab. Start typing to filter.</p>
+
+  <!-- CONTEXT -->
+  <h3 style="margin-bottom:1rem"><span class="tag ctx">CONTEXT</span> <span data-tr>Context Yönetimi</span><span data-en>Context Management</span></h3>
+  <table class="ct"><thead><tr><th><span data-tr>Komut</span><span data-en>Command</span></th><th><span data-tr>Açıklama</span><span data-en>Description</span></th></tr></thead><tbody>
+    <tr><td><code>/clear</code></td><td class="d"><span data-tr>Geçmişi siler, sıfırdan başlar. Alias: <code>/reset</code>, <code>/new</code></span><span data-en>Clears history, fresh start. Alias: <code>/reset</code>, <code>/new</code></span></td></tr>
+    <tr><td><code>/compact [...]</code></td><td class="d"><span data-tr>Konuşmayı sıkıştırır. Opsiyonel odak talimatı: <code>/compact API'ye odaklan</code></span><span data-en>Compresses conversation. Optional focus: <code>/compact focus on API</code></span></td></tr>
+    <tr><td><code>/context</code></td><td class="d"><span data-tr>Context kullanımını renkli grid'de gösterir.</span><span data-en>Visualizes context usage as a colored grid.</span></td></tr>
+  </tbody></table>
+
+  <!-- SESSION -->
+  <h3 style="margin:2rem 0 1rem"><span class="tag ses">SESSION</span> <span data-tr>Oturum</span><span data-en>Session</span></h3>
+  <table class="ct"><thead><tr><th><span data-tr>Komut</span><span data-en>Command</span></th><th><span data-tr>Açıklama</span><span data-en>Description</span></th></tr></thead><tbody>
+    <tr><td><code>/resume</code></td><td class="d"><span data-tr>Önceki oturumu devam ettir. Alias: <code>/continue</code></span><span data-en>Resume a previous session. Alias: <code>/continue</code></span></td></tr>
+    <tr><td><code>/rename [...]</code></td><td class="d"><span data-tr>Oturuma isim ver.</span><span data-en>Name the current session.</span></td></tr>
+    <tr><td><code>/branch</code></td><td class="d"><span data-tr>Konuşmayı dallandır. Alias: <code>/fork</code></span><span data-en>Branch the conversation. Alias: <code>/fork</code></span></td></tr>
+    <tr><td><code>/rewind</code></td><td class="d"><span data-tr>Önceki noktaya geri sar. Alias: <code>/checkpoint</code></span><span data-en>Rewind to an earlier point. Alias: <code>/checkpoint</code></span></td></tr>
+    <tr><td><code>/export</code></td><td class="d"><span data-tr>Konuşmayı dışa aktar.</span><span data-en>Export conversation as text.</span></td></tr>
+    <tr><td><code>/copy [N]</code></td><td class="d"><span data-tr>Yanıtı panoya kopyala.</span><span data-en>Copy response to clipboard.</span></td></tr>
+    <tr><td><code>/diff</code></td><td class="d"><span data-tr>İnteraktif diff görüntüleyici.</span><span data-en>Interactive diff viewer for changes.</span></td></tr>
+  </tbody></table>
+
+  <!-- CONFIG -->
+  <h3 style="margin:2rem 0 1rem"><span class="tag cfg">CONFIG</span> <span data-tr>Konfigürasyon</span><span data-en>Configuration</span></h3>
+  <table class="ct"><thead><tr><th><span data-tr>Komut</span><span data-en>Command</span></th><th><span data-tr>Açıklama</span><span data-en>Description</span></th></tr></thead><tbody>
+    <tr><td><code>/model [...]</code></td><td class="d"><span data-tr>Model değiştir: Sonnet, Opus, Haiku, <code>best</code>, <code>fast</code></span><span data-en>Switch model: Sonnet, Opus, Haiku, <code>best</code>, <code>fast</code></span></td></tr>
+    <tr><td><code>/effort [...]</code></td><td class="d"><span data-tr>Efor: <code>low</code>/<code>medium</code>/<code>high</code>/<code>max</code>/<code>auto</code></span><span data-en>Effort: <code>low</code>/<code>medium</code>/<code>high</code>/<code>max</code>/<code>auto</code></span></td></tr>
+    <tr><td><code>/config</code></td><td class="d"><span data-tr>Ayarlar arayüzü. Alias: <code>/settings</code></span><span data-en>Settings UI. Alias: <code>/settings</code></span></td></tr>
+    <tr><td><code>/permissions</code></td><td class="d"><span data-tr>İzin kuralları (allow/ask/deny)</span><span data-en>Permission rules (allow/ask/deny)</span></td></tr>
+    <tr><td><code>/theme</code></td><td class="d"><span data-tr>Renk teması değiştir.</span><span data-en>Change color theme.</span></td></tr>
+    <tr><td><code>/vim</code></td><td class="d"><span data-tr>Vim/Normal modu geçişi.</span><span data-en>Toggle Vim/Normal mode.</span></td></tr>
+    <tr><td><code>/fast</code></td><td class="d"><span data-tr>Hızlı mod aç/kapat.</span><span data-en>Toggle fast mode.</span></td></tr>
+  </tbody></table>
+
+  <!-- INFO -->
+  <h3 style="margin:2rem 0 1rem"><span class="tag inf">INFO</span> <span data-tr>Bilgi</span><span data-en>Info</span></h3>
+  <table class="ct"><thead><tr><th><span data-tr>Komut</span><span data-en>Command</span></th><th><span data-tr>Açıklama</span><span data-en>Description</span></th></tr></thead><tbody>
+    <tr><td><code>/help</code></td><td class="d"><span data-tr>Yardım ve tüm komutlar.</span><span data-en>Help and all commands.</span></td></tr>
+    <tr><td><code>/cost</code></td><td class="d"><span data-tr>Token kullanım istatistikleri.</span><span data-en>Token usage statistics.</span></td></tr>
+    <tr><td><code>/usage</code></td><td class="d"><span data-tr>Plan limitleri ve rate limit.</span><span data-en>Plan limits and rate limits.</span></td></tr>
+    <tr><td><code>/status</code></td><td class="d"><span data-tr>Versiyon, model, bağlantı.</span><span data-en>Version, model, connectivity.</span></td></tr>
+    <tr><td><code>/doctor</code></td><td class="d"><span data-tr>Kurulum doğrulama.</span><span data-en>Diagnose installation.</span></td></tr>
+    <tr><td><code>/stats</code></td><td class="d"><span data-tr>Kullanım görselleştirme.</span><span data-en>Usage visualization.</span></td></tr>
+  </tbody></table>
+
+  <!-- PROJECT -->
+  <h3 style="margin:2rem 0 1rem"><span class="tag prj">PROJECT</span> <span data-tr>Proje</span><span data-en>Project</span></h3>
+  <table class="ct"><thead><tr><th><span data-tr>Komut</span><span data-en>Command</span></th><th><span data-tr>Açıklama</span><span data-en>Description</span></th></tr></thead><tbody>
+    <tr><td><code>/init</code></td><td class="d"><span data-tr>CLAUDE.md oluştur. Codebase analizi.</span><span data-en>Create CLAUDE.md. Analyzes codebase.</span></td></tr>
+    <tr><td><code>/memory</code></td><td class="d"><span data-tr>Hafıza dosyalarını düzenle, auto-memory.</span><span data-en>Edit memory files, auto-memory toggle.</span></td></tr>
+    <tr><td><code>/add-dir</code></td><td class="d"><span data-tr>Ek çalışma dizini ekle.</span><span data-en>Add working directory.</span></td></tr>
+    <tr><td><code>/hooks</code></td><td class="d"><span data-tr>Hook yapılandırmaları.</span><span data-en>Hook configurations.</span></td></tr>
+    <tr><td><code>/mcp</code></td><td class="d"><span data-tr>MCP sunucu bağlantıları.</span><span data-en>MCP server connections.</span></td></tr>
+    <tr><td><code>/plan [...]</code></td><td class="d"><span data-tr>Plan moduna gir.</span><span data-en>Enter plan mode.</span></td></tr>
+    <tr><td><code>/plugin</code></td><td class="d"><span data-tr>Plugin yönetimi.</span><span data-en>Plugin management.</span></td></tr>
+    <tr><td><code>/install-github-app</code></td><td class="d"><span data-tr>GitHub PR review kurulumu.</span><span data-en>GitHub PR review setup.</span></td></tr>
+  </tbody></table>
+
+  <!-- BUNDLED -->
+  <h3 style="margin:2rem 0 1rem">🎯 <span data-tr>Bundled Skills</span><span data-en>Bundled Skills</span></h3>
+  <table class="ct"><thead><tr><th><span data-tr>Komut</span><span data-en>Command</span></th><th><span data-tr>Açıklama</span><span data-en>Description</span></th></tr></thead><tbody>
+    <tr><td><code>/simplify</code></td><td class="d"><span data-tr>Kod kalitesi incelemesi, 3 paralel ajan.</span><span data-en>Code quality review, 3 parallel agents.</span></td></tr>
+    <tr><td><code>/batch</code></td><td class="d"><span data-tr>Büyük ölçekli paralel değişiklikler.</span><span data-en>Large-scale parallel changes.</span></td></tr>
+    <tr><td><code>/debug</code></td><td class="d"><span data-tr>Hata ayıklama iş akışı.</span><span data-en>Debugging workflow.</span></td></tr>
+    <tr><td><code>/loop</code></td><td class="d"><span data-tr>Tekrarlayan görevleri döngüye al.</span><span data-en>Loop repetitive tasks.</span></td></tr>
+  </tbody></table>
+</div></section><hr class="divider">
+
+<!-- ====== 04 CONTEXT ====== -->
+<section id="context"><div class="container">
+  <div class="sl">04 — Context</div>
+  <h2 class="st" data-tr>Context Yönetimi</h2><h2 class="st" data-en>Context Management</h2>
+  <p class="sd" data-tr>Context penceresi sınırlıdır. Bunu yönetmek performansın anahtarıdır.</p>
+  <p class="sd" data-en>The context window is limited. Managing it is key to performance.</p>
+
+  <div class="cg">
+    <div class="cd"><div class="ci">🧹</div><h3>/clear</h3><p data-tr>Tamamen sıfırla. <strong>Her yeni görevde kullan.</strong></p><p data-en>Full reset. <strong>Use with every new task.</strong></p></div>
+    <div class="cd"><div class="ci">📦</div><h3>/compact</h3><p data-tr>Akıllı sıkıştırma. Neyi koruyacağını belirt.</p><p data-en>Smart compression. Specify what to keep.</p></div>
+    <div class="cd"><div class="ci">📊</div><h3>/context</h3><p data-tr>Doluluk oranını görselleştir.</p><p data-en>Visualize fill rate.</p></div>
+    <div class="cd"><div class="ci">🔀</div><h3>/branch</h3><p data-tr>Dallandır — alternatif dene.</p><p data-en>Fork — explore alternatives.</p></div>
+  </div>
+
+  <div class="co warn"><div class="co-t">⚠️ Context Rot</div>
+    <p data-tr>Uzun konuşmalarda Claude erken mesajları unutur. Görev değişiminde <code>/compact</code> veya <code>/clear</code> kullan.</p>
+    <p data-en>In long conversations Claude forgets earlier messages. Use <code>/compact</code> or <code>/clear</code> when switching tasks.</p>
+  </div>
+
+  <div class="fl">
+    <span class="fs"><span data-tr>Görev</span><span data-en>Task</span></span><span class="fa">→</span>
+    <span class="fs"><span data-tr>Çalış</span><span data-en>Work</span></span><span class="fa">→</span>
+    <span class="fs">/compact</span><span class="fa">→</span>
+    <span class="fs"><span data-tr>Yeni görev</span><span data-en>New task</span></span><span class="fa">→</span>
+    <span class="fs"><span data-tr>Uzun? /clear</span><span data-en>Long? /clear</span></span>
+  </div>
+</div></section><hr class="divider">
+
+<!-- ====== 05 CLAUDE.md ====== -->
+<section id="claudemd"><div class="container">
+  <div class="sl"><span data-tr>05 — Hafıza</span><span data-en>05 — Memory</span></div>
+  <h2 class="st">CLAUDE.md</h2>
+  <p class="sd" data-tr>Her oturumda Claude'un okuduğu proje hafızası. Bir kez yaz, tekrar etme.</p>
+  <p class="sd" data-en>Project memory Claude reads every session. Write once, never repeat.</p>
+
+  <h3 style="margin-bottom:1rem" data-tr>Dosya Hiyerarşisi</h3><h3 style="margin-bottom:1rem" data-en>File Hierarchy</h3>
+  <div class="ft">
+<span class="cm" data-tr># Öncelik: düşük → yüksek</span><span class="cm" data-en># Priority: low → high</span>
+<span class="di">/etc/claude-code/</span><span class="fi">CLAUDE.md</span>     <span class="cm" data-tr>← Admin (org)</span><span class="cm" data-en>← Admin (org)</span>
+<span class="di">~/.claude/</span><span class="im">CLAUDE.md</span>            <span class="cm" data-tr>← Kişisel global</span><span class="cm" data-en>← Personal global</span>
+<span class="di">project/</span><span class="im">CLAUDE.md</span>             <span class="cm" data-tr>← ⭐ Proje (EN ÖNEMLİ)</span><span class="cm" data-en>← ⭐ Project (MOST IMPORTANT)</span>
+<span class="di">project/.claude/</span>
+  <span class="fi">settings.json</span>              <span class="cm" data-tr>← İzinler, hooks</span><span class="cm" data-en>← Permissions, hooks</span>
+  <span class="fi">settings.local.json</span>        <span class="cm">(gitignored)</span>
+  <span class="di">rules/</span><span class="fi">*.md</span>                 <span class="cm" data-tr>← Modüler kurallar</span><span class="cm" data-en>← Modular rules</span>
+  <span class="di">skills/</span>                     <span class="cm" data-tr>← Özel komutlar</span><span class="cm" data-en>← Custom commands</span>
+  <span class="di">agents/</span>                     <span class="cm" data-tr>← Alt ajanlar</span><span class="cm" data-en>← Sub-agents</span>
+<span class="di">project/</span><span class="fi">CLAUDE.local.md</span>      <span class="cm" data-tr>← Kişisel notlar (gitignored)</span><span class="cm" data-en>← Personal notes (gitignored)</span>
+  </div>
+
+  <h3 style="margin:2rem 0 1rem" data-tr>Örnek CLAUDE.md</h3><h3 style="margin:2rem 0 1rem" data-en>Example CLAUDE.md</h3>
+  <div class="cb"><div class="cbh">CLAUDE.md</div>
+    <pre><span class="cmt"># Project: E-Commerce API</span>
+
+<span class="kw">## Commands</span>
+- Build: `npm run build`
+- Test: `npm test -- --watch`
+- Lint: `npm run lint:fix`
+
+<span class="kw">## Architecture</span>
+- Node.js + Express + TypeScript
+- PostgreSQL + Prisma ORM
+- JWT auth + refresh token rotation
+
+<span class="kw">## Rules</span>
+- All new code = TypeScript
+- Functional components + hooks only
+- JSDoc on every public function
+- Throw errors, never return null
+
+<span class="kw">## Watch Out</span>
+- DO NOT touch /api/v1/legacy/*
+- Run migrations: `npx prisma migrate dev`
+- Never put secrets in .env</pre></div>
+
+  <div class="co tip"><div class="co-t">💡 <span data-tr>Hızlı Başlangıç</span><span data-en>Quick Start</span></div>
+    <p data-tr><code>/init</code> → otomatik CLAUDE.md. <code>#</code> ile konuşma sırasında hafızaya not ekle.</p>
+    <p data-en><code>/init</code> → auto-generates CLAUDE.md. Use <code>#</code> to add notes to memory mid-conversation.</p>
+  </div>
+
+  <h3 style="margin:2rem 0 1rem" data-tr>@ ile Dosya Dahil Etme</h3><h3 style="margin:2rem 0 1rem" data-en>Include Files with @</h3>
+  <div class="cb"><div class="cbh">CLAUDE.md</div>
+    <pre><span class="kw">@</span><span class="pa">./docs/architecture.md</span>
+<span class="kw">@</span><span class="pa">~/shared/style-guide.md</span></pre></div>
+</div></section><hr class="divider">
+
+<!-- ====== 06 SKILLS ====== -->
+<section id="skills"><div class="container">
+  <div class="sl"><span data-tr>06 — Genişletme</span><span data-en>06 — Extend</span></div>
+  <h2 class="st" data-tr>Skills (Özel Komutlar)</h2><h2 class="st" data-en>Skills (Custom Commands)</h2>
+  <p class="sd" data-tr>Tekrar eden iş akışlarını SKILL.md olarak kaydet, <code>/skill-adi</code> ile çağır.</p>
+  <p class="sd" data-en>Save repeating workflows as SKILL.md, invoke with <code>/skill-name</code>.</p>
+
+  <div class="cg">
+    <div class="cd"><h3 data-tr>📂 Proje Skill'i</h3><h3 data-en>📂 Project Skill</h3><p><code>.claude/skills/review/SKILL.md</code></p></div>
+    <div class="cd"><h3>🌍 Global Skill</h3><p><code>~/.claude/skills/my-skill/SKILL.md</code></p></div>
+  </div>
+
+  <div class="cb"><div class="cbh">.claude/skills/code-review/SKILL.md</div>
+    <pre><span class="cmt">---</span>
+<span class="kw">name:</span> <span class="str">code-review</span>
+<span class="kw">description:</span> <span class="str">Comprehensive code review</span>
+<span class="kw">allowed-tools:</span> <span class="str">Read, Grep, Glob, Bash(git diff:*)</span>
+<span class="cmt">---</span>
+
+<span class="fn">## Changed Files</span>
+!`git diff --name-only HEAD~1`
+
+<span class="fn">## Review</span>
+Check for: security, performance, tests, docs.</pre></div>
+
+  <h3 style="margin:2rem 0 1rem">Frontmatter</h3>
+  <table class="ct"><thead><tr><th><span data-tr>Alan</span><span data-en>Field</span></th><th><span data-tr>Açıklama</span><span data-en>Description</span></th></tr></thead><tbody>
+    <tr><td><code>name</code></td><td class="d"><span data-tr>Slash komutu ismi</span><span data-en>Slash command name</span></td></tr>
+    <tr><td><code>description</code></td><td class="d"><span data-tr>Otomatik tetikleme tanımı</span><span data-en>Auto-invocation description</span></td></tr>
+    <tr><td><code>allowed-tools</code></td><td class="d"><span data-tr>İzinli araçlar</span><span data-en>Permitted tools</span></td></tr>
+    <tr><td><code>model</code></td><td class="d"><span data-tr>Zorunlu model</span><span data-en>Required model</span></td></tr>
+    <tr><td><code>disable-model-invocation</code></td><td class="d"><span data-tr>true → Sadece manuel</span><span data-en>true → Manual only</span></td></tr>
+  </tbody></table>
+
+  <h3 style="margin:2rem 0 1rem">$ARGUMENTS</h3>
+  <div class="cb"><div class="cbh">.claude/skills/fix-issue/SKILL.md</div>
+    <pre><span class="cmt">---</span>
+<span class="kw">name:</span> <span class="str">fix-issue</span>
+<span class="kw">description:</span> <span class="str">Fix GitHub issue by number</span>
+<span class="cmt">---</span>
+Fix issue #<span class="fl">$ARGUMENTS</span> following our standards.</pre></div>
+  <p style="color:var(--text-secondary);font-size:0.9rem"><span data-tr>Kullanım:</span><span data-en>Usage:</span> <code>/fix-issue 123</code> → $ARGUMENTS = "123"</p>
+</div></section><hr class="divider">
+
+<!-- ====== 07 HOOKS ====== -->
+<section id="hooks"><div class="container">
+  <div class="sl"><span data-tr>07 — Otomasyon</span><span data-en>07 — Automation</span></div>
+  <h2 class="st">Hooks</h2>
+  <p class="sd" data-tr>Araç kullanımı öncesinde/sonrasında otomatik çalışan komutlar.</p>
+  <p class="sd" data-en>Commands that auto-run before/after tool use. Automate linting, formatting.</p>
+
+  <div class="cb"><div class="cbh">.claude/settings.json</div>
+    <pre>{
+  <span class="kw">"hooks"</span>: {
+    <span class="str">"PostToolUse"</span>: [
+      {
+        <span class="kw">"matcher"</span>: <span class="str">"Write(*.py)"</span>,
+        <span class="kw">"hooks"</span>: [{ <span class="kw">"type"</span>: <span class="str">"command"</span>, <span class="kw">"command"</span>: <span class="str">"python -m black $file"</span> }]
+      },
+      {
+        <span class="kw">"matcher"</span>: <span class="str">"Write(*.ts)"</span>,
+        <span class="kw">"hooks"</span>: [{ <span class="kw">"type"</span>: <span class="str">"command"</span>, <span class="kw">"command"</span>: <span class="str">"npx prettier --write $file"</span> }]
+      }
+    ]
+  }
+}</pre></div>
+
+  <div class="cg">
+    <div class="cd"><h3>PreToolUse</h3><p data-tr>Araçtan <strong>önce</strong>. Doğrulama, güvenlik.</p><p data-en>Runs <strong>before</strong> tool. Validation, security.</p></div>
+    <div class="cd"><h3>PostToolUse</h3><p data-tr>Araçtan <strong>sonra</strong>. Format, lint, type check.</p><p data-en>Runs <strong>after</strong> tool. Format, lint, type check.</p></div>
+    <div class="cd"><h3>Stop</h3><p data-tr>Claude durduğunda. Final kontrol.</p><p data-en>When Claude stops. Final verification.</p></div>
+  </div>
+
+  <div class="co tip"><div class="co-t">💡 Hooks vs CLAUDE.md</div>
+    <p data-tr>Hook'lar deterministik — her seferinde çalışır. CLAUDE.md talimatları atlanabilir. Linter/formatter → hook.</p>
+    <p data-en>Hooks are deterministic — they run every time. CLAUDE.md instructions can be skipped. Linter/formatter → use hooks.</p>
+  </div>
+</div></section><hr class="divider">
+
+<!-- ====== 08 AGENTS ====== -->
+<section id="agents"><div class="container">
+  <div class="sl"><span data-tr>08 — Ajanlar</span><span data-en>08 — Agents</span></div>
+  <h2 class="st">Sub-Agents</h2>
+  <p class="sd" data-tr>Claude karmaşık görevleri alt ajanlara delege edebilir.</p>
+  <p class="sd" data-en>Claude can delegate complex tasks to specialized sub-agents.</p>
+
+  <div class="cg">
+    <div class="cd"><div class="ci">🤖</div><h3 data-tr>Claude (Ana)</h3><h3 data-en>Claude (Main)</h3><p data-tr>Ana ajan, araçlara erişim, kendi kararları.</p><p data-en>Main agent, tool access, autonomous decisions.</p></div>
+    <div class="cd"><div class="ci">🔧</div><h3>Task</h3><p data-tr>Otomatik oluşturulan genel amaçlı alt ajan.</p><p data-en>Auto-spawned general-purpose sub-agent.</p></div>
+    <div class="cd"><div class="ci">🎯</div><h3 data-tr>Özel Agent</h3><h3 data-en>Custom Agent</h3><p data-tr><code>.claude/agents/</code> dizininde tanımla.</p><p data-en>Define in <code>.claude/agents/</code> directory.</p></div>
+  </div>
+
+  <div class="cb"><div class="cbh">.claude/agents/code-reviewer.md</div>
+    <pre><span class="cmt">---</span>
+<span class="kw">name:</span> <span class="str">code-reviewer</span>
+<span class="kw">description:</span> <span class="str">Expert security reviewer</span>
+<span class="kw">allowed-tools:</span> <span class="str">Read, Grep, Glob</span>
+<span class="cmt">---</span>
+You are a code reviewer. Read only, never modify.
+Focus on: security, performance, error handling, race conditions.</pre></div>
+</div></section><hr class="divider">
+
+<!-- ====== 09 PLUGINS ====== -->
+<section id="plugins"><div class="container">
+  <div class="sl"><span data-tr>09 — Eklentiler</span><span data-en>09 — Extensions</span></div>
+  <h2 class="st">Plugins & MCP</h2>
+  <p class="sd" data-tr>Plugin'ler paket halinde özellik sunar. MCP harici araçlara bağlanır.</p>
+  <p class="sd" data-en>Plugins bundle features. MCP connects to external tools.</p>
+
+  <div class="cb"><div class="cbh">Terminal</div>
+    <pre><span class="cmt" data-tr># Marketplace ekle</span><span class="cmt" data-en># Add marketplace</span>
+<span class="pr">❯</span> /plugin marketplace add <span class="str">https://github.com/anthropics/claude-plugins-official</span>
+
+<span class="cmt" data-tr># Plugin kur</span><span class="cmt" data-en># Install plugin</span>
+<span class="pr">❯</span> /plugin install <span class="str">code-review@claude-plugins-official</span></pre></div>
+
+  <h3 style="margin:2rem 0 1rem">MCP (Model Context Protocol)</h3>
+  <div class="cb"><div class="cbh">.mcp.json</div>
+    <pre>{
+  <span class="kw">"mcpServers"</span>: {
+    <span class="str">"github"</span>: {
+      <span class="kw">"command"</span>: <span class="str">"npx"</span>,
+      <span class="kw">"args"</span>: [<span class="str">"-y"</span>, <span class="str">"@modelcontextprotocol/server-github"</span>],
+      <span class="kw">"env"</span>: { <span class="fl">"GITHUB_TOKEN"</span>: <span class="str">"ghp_..."</span> }
+    }
+  }
+}</pre></div>
+</div></section><hr class="divider">
+
+<!-- ====== 10 WORKFLOW ====== -->
+<section id="workflow"><div class="container">
+  <div class="sl"><span data-tr>10 — Pratik</span><span data-en>10 — Practice</span></div>
+  <h2 class="st" data-tr>Günlük Workflow</h2><h2 class="st" data-en>Daily Workflows</h2>
+
+  <h3 style="margin-bottom:1rem" data-tr>🟢 Yeni Proje</h3><h3 style="margin-bottom:1rem" data-en>🟢 New Project</h3>
+  <div class="cb"><div class="cbh">Terminal</div>
+    <pre><span class="pr">❯</span> cd <span class="pa">~/projects/new-app</span>
+<span class="pr">❯</span> claude
+<span class="pr">❯</span> /init
+<span class="pr">❯</span> /terminal-setup</pre></div>
+
+  <h3 style="margin:2rem 0 1rem" data-tr>🔧 Bug Fix</h3><h3 style="margin:2rem 0 1rem" data-en>🔧 Bug Fix</h3>
+  <div class="cb"><div class="cbh">Terminal</div>
+    <pre><span class="pr">❯</span> /plan <span class="str">fix JWT expiry bug in auth</span>
+<span class="ou" data-tr>→ Claude plan yapar, onay bekler</span><span class="ou" data-en>→ Claude plans, waits for approval</span>
+<span class="pr">❯</span> /diff
+<span class="pr">❯</span> /compact <span class="str" data-tr>bug fix'i özetle</span><span class="str" data-en>summarize the fix</span></pre></div>
+
+  <h3 style="margin:2rem 0 1rem" data-tr>🔄 Shell Kısayolu</h3><h3 style="margin:2rem 0 1rem" data-en>🔄 Shell Shortcut</h3>
+  <div class="cb"><div class="cbh">Terminal</div>
+    <pre><span class="cmt" data-tr># ! → doğrudan shell, token tasarrufu</span><span class="cmt" data-en># ! → direct shell, saves tokens</span>
+<span class="pr">❯</span> !git status
+<span class="pr">❯</span> !npm test</pre></div>
+</div></section><hr class="divider">
+
+<!-- ====== 11 TIPS ====== -->
+<section id="tips"><div class="container">
+  <div class="sl"><span data-tr>11 — Uzman</span><span data-en>11 — Expert</span></div>
+  <h2 class="st">Pro Tips</h2>
+
+  <div class="cg">
+    <div class="cd" style="border-left:3px solid var(--accent-green)"><h3 data-tr>🚀 /clear Sık Kullan</h3><h3 data-en>🚀 Use /clear Often</h3><p data-tr>Her yeni görevde <code>/clear</code>. Eski context token israfı.</p><p data-en>Use <code>/clear</code> with every new task. Old context wastes tokens.</p></div>
+    <div class="cd" style="border-left:3px solid var(--accent-blue)"><h3 data-tr>🧠 # ile Hafıza</h3><h3 data-en>🧠 # for Memory</h3><p data-tr><code># Prisma v6</code> → MEMORY.md'ye kaydedilir.</p><p data-en><code># We use Prisma v6</code> → Saved to MEMORY.md.</p></div>
+    <div class="cd" style="border-left:3px solid var(--accent-purple)"><h3 data-tr>📋 /plan ile Başla</h3><h3 data-en>📋 Start with /plan</h3><p data-tr>Karmaşık görevlerde önce plan, sonra uygulama.</p><p data-en>For complex tasks: plan first, then execute.</p></div>
+    <div class="cd" style="border-left:3px solid var(--accent-yellow)"><h3 data-tr>⚡ Model Seçimi</h3><h3 data-en>⚡ Model Choice</h3><p><strong>Sonnet</strong>: <span data-tr>hızlı, çoğu iş</span><span data-en>fast, most tasks</span> · <strong>Haiku</strong>: <span data-tr>basit</span><span data-en>simple</span> · <strong>Opus</strong>: <span data-tr>karmaşık</span><span data-en>complex</span></p></div>
+    <div class="cd" style="border-left:3px solid var(--accent-red)"><h3 data-tr>🔒 İzinler</h3><h3 data-en>🔒 Permissions</h3><p data-tr><code>/permissions</code> ile hassas dosyaları koru.</p><p data-en>Use <code>/permissions</code> to protect sensitive files.</p></div>
+    <div class="cd" style="border-left:3px solid var(--accent-cyan)"><h3 data-tr>🔄 /diff Her Zaman</h3><h3 data-en>🔄 Always /diff</h3><p data-tr>Değişikliklerden sonra <code>/diff</code>. Hataları erken yakala.</p><p data-en>Run <code>/diff</code> after changes. Catch mistakes early.</p></div>
+  </div>
+
+  <div class="co"><div class="co-t"><span data-tr>⌨️ Kısayol Özeti</span><span data-en>⌨️ Shortcut Cheat Sheet</span></div>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;line-height:2">
+      <code>Esc</code> → <span data-tr>Durdur</span><span data-en>Stop</span><br>
+      <code>!</code>cmd → <span data-tr>Shell</span><span data-en>Shell</span><br>
+      <code>#</code>note → <span data-tr>Hafıza</span><span data-en>Memory</span><br>
+      <code>@</code>file → <span data-tr>Dosya ref</span><span data-en>File ref</span><br>
+      <code>/btw</code> → <span data-tr>Yan soru</span><span data-en>Side question</span>
+    </p>
+  </div>
+
+  <h3 style="margin:2rem 0 1rem">settings.json</h3>
+  <div class="cb"><div class="cbh">.claude/settings.json</div>
+    <pre>{
+  <span class="kw">"model"</span>: <span class="str">"claude-sonnet-4-20250514"</span>,
+  <span class="kw">"permissions"</span>: {
+    <span class="kw">"allowedTools"</span>: [<span class="str">"Read"</span>, <span class="str">"Write"</span>, <span class="str">"Bash(git *)"</span>],
+    <span class="kw">"deny"</span>: [<span class="str">"Read(./.env)"</span>, <span class="str">"Write(./production.*)"</span>]
+  },
+  <span class="kw">"hooks"</span>: {
+    <span class="str">"PostToolUse"</span>: [{
+      <span class="kw">"matcher"</span>: <span class="str">"Write(*.ts)"</span>,
+      <span class="kw">"hooks"</span>: [{ <span class="kw">"type"</span>: <span class="str">"command"</span>, <span class="kw">"command"</span>: <span class="str">"npx prettier --write $file"</span> }]
+    }]
+  }
+}</pre></div>
+
+  <h3 style="margin:2rem 0 1rem" data-tr>CLI Bayrakları</h3><h3 style="margin:2rem 0 1rem" data-en>CLI Flags</h3>
+  <div class="cb"><div class="cbh">Terminal</div>
+    <pre><span class="pr">❯</span> claude <span class="fl">-p</span> <span class="str">"list deps"</span>            <span class="cmt" data-tr># Tek seferlik</span><span class="cmt" data-en># One-shot</span>
+<span class="pr">❯</span> claude <span class="fl">--model</span> <span class="str">claude-opus-4-6</span>  <span class="cmt" data-tr># Model seç</span><span class="cmt" data-en># Choose model</span>
+<span class="pr">❯</span> claude <span class="fl">--dangerously-skip-permissions</span>
+<span class="pr">❯</span> claude <span class="fl">--mcp-debug</span>
+<span class="pr">❯</span> claude <span class="fl">--resume</span>                 <span class="cmt" data-tr># Devam et</span><span class="cmt" data-en># Resume</span></pre></div>
+</div></section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="lt">Claude Code Cookbook</div>
+  <p data-tr>Anthropic Claude Code için kapsamlı Türkçe/İngilizce rehber</p>
+  <p data-en>Comprehensive bilingual guide for Anthropic Claude Code</p>
+  <p style="margin-top:0.5rem"><span data-tr>Resmi dokümantasyon:</span><span data-en>Official docs:</span> <a href="https://code.claude.com/docs/en/overview" target="_blank">code.claude.com/docs</a></p>
+</footer>
+
+<script>
+function setLang(lang) {
+  document.documentElement.lang = lang;
+  document.getElementById('btn-tr').classList.toggle('active', lang === 'tr');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  try { localStorage.setItem('cc-lang', lang); } catch(e) {}
+}
+try { const s = localStorage.getItem('cc-lang'); if (s) setLang(s); } catch(e) {}
+</script>
+</body>
+</html>
